@@ -1,0 +1,16 @@
+#!/bin/sh
+
+url=$1
+
+outfile=`mktemp`
+outfileq=`mktemp`
+
+curlinfo=`curl -s -m5 -w '%{json}' -o $outfile $url`
+
+# doubling incidental single quotes for psql
+urlq=`echo $url|sed -E "s/'/''/g"`
+curlinfoq=`echo $curlinfo|sed -E "s/'/''/g"`
+cat $outfile|sed -E "s/'/''/g" > $outfileq
+
+psql -a -c "insert into curl1(url,data,curlinfo) \
+values ('$urlq','`cat $outfileq`','$curlinfoq')"
