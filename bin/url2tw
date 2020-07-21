@@ -1,0 +1,54 @@
+#!/bin/sh
+
+u=$1 # url
+slice=$2
+slice="${slice:=0}"
+
+jqfilter='.context.meta.twitter|.site//empty,":",.creator//empty,"\n"'
+
+twmeta=`curl -Zse 'http://debug.iframely.com/' \
+'https://iframely.com/iframely?meta=true&uri='$u \
+| jq -j $jqfilter`
+
+site=${twmeta%%:*}
+site=${site#@}
+creator=${twmeta##*:}
+creator=${creator#@}
+
+#echo Site: $site
+#echo Creator: $creator
+
+twq="/1.1/search/tweets.json?count=100&lang=en&tweet_mode=extended&result_type=mixed&q="
+twq="${twq}-filter:retweets "
+twq="${twq}url:'$u' "
+
+dom="${u#*//}"
+dom="${dom%%/*}"
+
+#jqff='[.statuses[]]|sort_by(.retweet_count*2+.favorite_count)|reverse|.[0]//empty'
+
+twurl "${twq}"|\
+jq -e \
+--arg creator "$creator" \
+--arg site "$site" \
+--arg dom "$dom" \
+'[.statuses[]|. + {
+wtcreator: $creator,
+wtsite: $site,
+wtdom: $dom,
+wtdomi: .user.entities.url.urls[0].display_url,
+wtuseri: .user.screen_name,
+wtlog2fc: (.user.followers_count|log2),
+wt:
+(
+(if .user.screen_name==$creator then 1 else 0 end)*500 +
+(if .user.screen_name==$site then 1 else 0 end)*300 +
+(if .user.entities.url.urls[0].display_url==$dom then 1 else 0 end)*300 +
+.retweet_count*2 +
+.favorite_count +
+(.user.followers_count|log2) +
+(if .user.verified then 1 else 0 end)*10
+) } ]
+|sort_by(.wt)|reverse|.['$slice']//empty'
+
+exit 0
