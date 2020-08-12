@@ -1,0 +1,5 @@
+#!/bin/sh
+
+curl -s 'https://hacker-news.firebaseio.com/v0/topstories.json'|\
+jq -j '.[]|"https://hacker-news.firebaseio.com/v0/item/",.,".json\n"'\
+|head -n200|xargs curl -sZ|jq -r '[.id,.title,.url]|@tsv'

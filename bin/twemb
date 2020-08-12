@@ -1,0 +1,5 @@
+#!/bin/sh
+
+while read a;do
+    echo "https://publish.twitter.com/oembed?omit_script=true&hide_thread=true&align=center&theme=dark&dnt=true&url=http://twitter.com/i/status/${a##*/}"
+done | xargs curl -s | jq -r .html
