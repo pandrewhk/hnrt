@@ -4,6 +4,9 @@ nyc200.json:
 nyc200.tsv: nyc200.json
 	cat nyc200.json|jq -r '.[]|[.id_str,.entities.urls[-1].expanded_url]|@tsv' > $@
 
+hntop2pg:
+	curl2pg 'https://hacker-news.firebaseio.com/v0/topstories.json'
+
 hntop.json:
 	curl -s 'https://hacker-news.firebaseio.com/v0/topstories.json' -o $@
 
